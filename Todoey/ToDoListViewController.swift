@@ -34,4 +34,23 @@ class ToDoListViewController: UITableViewController {
         return cell
         
     }
+    
+    //MARK: - TableView Delegate Methods
+    // This function initially printed the selected array item when the item was clicked. Once this was demonstrated to work, print was commented out and instead, a checkmark accessory is invoked for the selected item Once selected, the row flashes gray briefly then reverts to nonselected look
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        // Print the selected array item (for test purposes)
+        //print(itemArray[indexPath.row])
+        
+        // Check to see if seleted cell already has a checkmark accessory.  If it does, remove the checkmark.  If it doesn't add the checkmark accessory
+        
+        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
+            tableView.cellForRow(at: indexPath)?.accessoryType = .none
+        } else {
+            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+        }
+        
+        // Finally, revert to non-selected look for the cell
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
 }
