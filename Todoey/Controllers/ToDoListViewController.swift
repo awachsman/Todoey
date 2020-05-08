@@ -48,6 +48,8 @@ class ToDoListViewController: UITableViewController {
         
         print(dataFilePath)
         
+        /* The harcoded items below are no longer required since we now load the itemArray with records from the plist in dataFilePath
+         
         let newItem = Item()
         newItem.title = "Buy eggs"
         itemArray.append(newItem)
@@ -59,6 +61,10 @@ class ToDoListViewController: UITableViewController {
         let newItem3 = Item()
         newItem3.title = "Go out to dinner"
         itemArray.append(newItem3)
+        */
+        // Call loadItems() to load data from plist located in dataFilePath
+        
+        loadItems()
         
         // Iteration 1 - used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type
 //        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
@@ -214,6 +220,19 @@ class ToDoListViewController: UITableViewController {
         
         // refresh the tableView to display added item
         self.tableView.reloadData()
+    }
+    
+    func loadItems() {
+        // Create a constant named data and set it to Data created using the contents of a URL
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            // Create a decoder
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray =  try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error decoding item array, \(error)")
+            }
+        }
     }
     
 }
