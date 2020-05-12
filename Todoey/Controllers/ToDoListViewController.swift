@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
     /* Iteration 1
@@ -15,18 +16,16 @@ class ToDoListViewController: UITableViewController {
      var itemArray = ["Buy eggs", "Study Swift", "Go out to Dinner"]
      
      However, this has been commented out as we moved to MVC design in Iteration 2.
-     */
     
-    
-    /* Iteration 2
-     Using MVC, use an array based on the Item class initialized in Item.swift
+     Iteration 2
+     
+     *Using MVC, use an array based on the Item class initialized in Item.swift
      */
     
     var itemArray = [Item]()
     
-    /* Create a constant to hold the file path to a default url path for shared files (that default is a singleton), in the user's personal directory.  This is an array, and we want to grab the first item.  In that first item, we'll create Items.plist.  In total, this is a path where we will create the documents we want to save
-     */
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    //Convert the AppDelegate class to an object in order to get at .persistentContainer; assign the result to a constant called context
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     /* Iteration 1
       We started with user defaults but after moving to MVC, determined that defaults could not save non-standard datatypes created from the Item.swift file. Therefore, that code, which created a "defaults" constant based on UserDefaults.standard, is commented out below
@@ -37,6 +36,8 @@ class ToDoListViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         // History -
         /* Iteration 1 - Items are saved in a user defaults file named "defaults". "defaults" loads the tableview as follows:
          if let items = defaults.array(forKey: "TodoListArray") as? [String] {
@@ -46,7 +47,6 @@ class ToDoListViewController: UITableViewController {
          // This code substitutes for code in Iteration 1 and reflects MVC
         */
         
-        print(dataFilePath)
         
         /* The harcoded items below are no longer required since we now load the itemArray with records from the plist in dataFilePath
          
@@ -64,7 +64,7 @@ class ToDoListViewController: UITableViewController {
         */
         // Call loadItems() to load data from plist located in dataFilePath
         
-        loadItems()
+        //loadItems()
         
         // Iteration 1 - used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type
 //        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
@@ -132,7 +132,7 @@ class ToDoListViewController: UITableViewController {
 //            itemArray[indexPath.row].done = false
 //        }
         
-        // This code look at the done property, changes status to the opposite of what it currently is and writes array to the file
+        // This code looks at the done property, changes status to the opposite of what it currently is and writes array to the file
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
         self.saveItems()
@@ -155,8 +155,9 @@ class ToDoListViewController: UITableViewController {
     //MARK: - Add New Items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
-        //NOTE:  Understanding of scope for variables is necessary to follow sequence of events below
-        //1. Initialize an empty text field called textField.  It's accessible throughout this IBAction and holds whatever is placed into the text field we're creating in the UIAlertController
+        //NOTE:  Understanding of scope for variables is necessary to follow sequence of events below.  6                        steps are:
+        
+        //1. Initialize avar called textField which is accessible throughout this IBAction and holds whatever is placed into the text field we're creating in the UIAlertController
         var textField = UITextField()
         
         //2. Create the UIAlertContoller popup with a placeholder
@@ -165,15 +166,31 @@ class ToDoListViewController: UITableViewController {
         //3. Create the action.  Code in following closure determines  what happens when the Add Item button in the UIAlert is pressed
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
            
-            //NOTE : Moving to MVC replaces the line below with the code after the line below to add an item to the itemArray
-            //self.itemArray.append(textField.text!) //texfield.text was created in 4b. below.
-            let newItem = Item()
+            /*
+             Different methods used to create an element called newItem
+             Iteration 1 - add an element to an array
+             
+             self.itemArray.append(textField.text!)
+             
+             Iteration 2 - Move to MVC; initialize newItem from the Item class which was defined in Item.swift
+             
+             let newItem = Item()
+             
+             Iteration 3 - Move to CoreData.  See below
+             */
+            
+            /*Iteration 3 begins here. Set newItem to the viewContext of our persistent container as specified in AppDelegate.swift.
+             Also note that since the done field in DataModel.xcdatamodeld is not optional, we need to provide a value for the done field
+             */
+            
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             self.itemArray.append(newItem)
             
             /*
              Iteration 1 -
-             Initially, we used user defaults and created a "defaults" object to store an itemArray.  We're now storing array information in a documents folder on the phone.  The obsoleted code follows below.
+             First we used user defaults and created a "defaults" object to store an itemArray.  We're now storing array information in a documents folder on the phone.  The obsoleted code follows below.
              
              // Add element to userdefaults.  TodoListArray identifies the array within the defaults.  CAUTION: default is updated with latest array information in a plist but defaults must be explicitly read from in order to populate the tableView with saved data
              
@@ -204,18 +221,28 @@ class ToDoListViewController: UITableViewController {
     
     func saveItems() {
         
-        //Iteration 2 -
-        
-        // Create an encode and initialize it
-        let encoder = PropertyListEncoder()
-        
-        // Encode our itemArray
-        
+        /* Iteration 2 - Using the dataFilePath, encode the itemArray data and write it to that path
+         
+         Create an encoder, initialize it and use it to encode itemArray
+         
+         let encoder = PropertyListEncoder()
+         
+         do {
+             let data = try encoder.encode(itemArray)
+             try  data.write(to: dataFilePath!)
+         } catch {
+             print("Error encoding item array, \(error)")
+         }
+         
+         */
+    
+        /* Iteration 3, using CoreData
+         
+         */
         do {
-            let data = try encoder.encode(itemArray)
-            try  data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Error encoding item array, \(error)")
+            print("Error saving context, \(error)")
         }
         
         // refresh the tableView to display added item
@@ -223,16 +250,24 @@ class ToDoListViewController: UITableViewController {
     }
     
     func loadItems() {
-        // Create a constant named data and set it to Data created using the contents of a URL
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            // Create a decoder
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray =  try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error decoding item array, \(error)")
-            }
-        }
+        
+        /* Iteration 2 - Using the dataFilePath URL, create a constant named data and set it to Data
+        
+        Create a decoder, initialize it and use it to encode itemArray
+        
+         if let data = try? Data(contentsOf: dataFilePath!) {
+             // Create a decoder
+             let decoder = PropertyListDecoder()
+             do {
+                 itemArray =  try decoder.decode([Item].self, from: data)
+             } catch {
+                 print("Error decoding item array, \(error)")
+             }
+         }
+        */
+        
+        /* Iteration 3 moves to CoreData*/
+        
     }
     
 }
