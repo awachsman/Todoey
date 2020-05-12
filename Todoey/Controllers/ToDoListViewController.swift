@@ -64,7 +64,7 @@ class ToDoListViewController: UITableViewController {
         */
         // Call loadItems() to load data from plist located in dataFilePath
         
-        //loadItems()
+        loadItems()
         
         // Iteration 1 - used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type
 //        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
@@ -125,14 +125,33 @@ class ToDoListViewController: UITableViewController {
     // This function initially printed the selected array item when the item was clicked. Once this was demonstrated to work, print was commented out and instead, a checkmark accessory is invoked for the selected item. The selected row flashes gray briefly then reverts to nonselected look
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        // The code below was a first approximation at setting the value of the done property defined in the the class named Item (oused in Item.swift).  However, it is wordy and inelegant and is now commented out.  The code which follows it now handles setting the value of the done property.
-//        if itemArray[indexPath.row].done == false {
-//            itemArray[indexPath.row].done = true
-//        } else {
-//            itemArray[indexPath.row].done = false
-//        }
+        /* We denote item completion by displaying a checkmark to the right of the selected item
+         
+         This was originally donw with the following:
+         
+         Iteration 1:
+         
+         if itemArray[indexPath.row].done == false {
+            itemArray[indexPath.row].done = true
+            } else {
+            itemArray[indexPath.row].done = false
+          }
+         
+         Above code is verbose and has been replaced by Iteration 2, which examines the done property, toggles status to the opposite of what it currently is and writes array to the file
+         */
         
-        // This code looks at the done property, changes status to the opposite of what it currently is and writes array to the file
+        /*
+         This code segment changes app behavior.  It serves to delete records instead of adding or removing the checkmark accessory. Procedurally, one must remove the item from CoreData before removing it from itemArray since otherwise, indexPath.row may have an inaccurate value.
+         
+         Remove from CoreData:
+         context.delete(itemArray[indexPath.row])
+         
+         Remove from the array:
+         itemArray.remove(at: indexPath.row)
+         */
+        
+        
+        //Iteration 2
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
         self.saveItems()
@@ -266,7 +285,17 @@ class ToDoListViewController: UITableViewController {
          }
         */
         
-        /* Iteration 3 moves to CoreData*/
+        /* Iteration 3 moves to CoreData and begins below */
+        
+        // Create a constant named request, of type NSFetchRequest.  Note that in this instance, the datatype MUST be specified and you MUST also specify the entity that you're trying to request
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        // App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error fetching data from context \(error)")
+        }
+        
         
     }
     
