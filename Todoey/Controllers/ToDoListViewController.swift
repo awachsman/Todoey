@@ -9,15 +9,16 @@
 import UIKit
 import CoreData
 
+// The ToDoListViewController is the delegate for the UISearchBar
 class ToDoListViewController: UITableViewController {
-    /* Iteration 1
+    /* Iteration 1 - (obsolete) -
      Initially, an array with 3 todo items was created which served to populate cells 1, 2 and 3 in the tableView.
      
      var itemArray = ["Buy eggs", "Study Swift", "Go out to Dinner"]
      
      However, this has been commented out as we moved to MVC design in Iteration 2.
     
-     Iteration 2
+     Iteration 2 - (obsolete) -
      
      *Using MVC, use an array based on the Item class initialized in Item.swift
      */
@@ -27,7 +28,7 @@ class ToDoListViewController: UITableViewController {
     //Convert the AppDelegate class to an object in order to get at .persistentContainer; assign the result to a constant called context
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
-    /* Iteration 1
+    /* Iteration 1 - (obsolete) -
       We started with user defaults but after moving to MVC, determined that defaults could not save non-standard datatypes created from the Item.swift file. Therefore, that code, which created a "defaults" constant based on UserDefaults.standard, is commented out below
      
      // Ceate a standard user defaults database
@@ -39,11 +40,11 @@ class ToDoListViewController: UITableViewController {
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         // History -
-        /* Iteration 1 - Items are saved in a user defaults file named "defaults". "defaults" loads the tableview as follows:
+        /* Iteration 1 (obsolete) - Items are saved in a user defaults file named "defaults". "defaults" loads the tableview as follows:
          if let items = defaults.array(forKey: "TodoListArray") as? [String] {
              itemArray = items
          }
-         Iteration 2 - Code above was obsoleted once we applied MVC.  Items are now initialized based on class named Item, as defined in Item.swift.  The IBAction addButtonPressed contains  "self.defaults.set(self.itemArray, forKey: "TodoListArray")" which saves the array in the user defaults named "defaults".
+         Iteration 2 - (obsolete) - Code above was obsoleted once we applied MVC.  Items are now initialized based on class named Item, as defined in Item.swift.  The IBAction addButtonPressed contains  "self.defaults.set(self.itemArray, forKey: "TodoListArray")" which saves the array in the user defaults named "defaults".
          // This code substitutes for code in Iteration 1 and reflects MVC
         */
         
@@ -62,14 +63,20 @@ class ToDoListViewController: UITableViewController {
         newItem3.title = "Go out to dinner"
         itemArray.append(newItem3)
         */
-        // Call loadItems() to load data from plist located in dataFilePath
+        
+        /*
+         Call loadItems() to load items from SQLite using CoreData. Note - no param provided to loadItems() below since a default param of Item.fetchRequest has been specified in the function's  definition
+         */
         
         loadItems()
         
-        // Iteration 1 - used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type
-//        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-//            itemArray = items
-//        }
+        /* Iteration 1 - obsolete -used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type.
+         
+         if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
+            itemArray = items
+         }
+         */
+        
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -87,7 +94,7 @@ class ToDoListViewController: UITableViewController {
         
         /*
          There are several ways to turn the checkmark on and off
-         Method 1: This was the original method before we defined the constant called item.  Instead it used "itemArray[indexPath.row" and then used an if-else to set the accessoryType to .checkmark or  to .none
+         Method 1: (obsolete) - This was the original method before we defined the constant called item.  Instead it used "itemArray[indexPath.row" and then used an if-else to set the accessoryType to .checkmark or  to .none
          
          cell.textLabel?.text = itemArray[indexPath.row].title
         if itemArray[indexPath.row].done == true {
@@ -96,7 +103,7 @@ class ToDoListViewController: UITableViewController {
             cell.accessoryType = .none
         }
          
-        Method 2: identical to Method 1 but uses the constant called item
+        Method 2: (obsolete) - identical to Method 1 but uses the constant called item
          
         cell.textLabel?.text = item.title
         if item.done == true {
@@ -129,7 +136,7 @@ class ToDoListViewController: UITableViewController {
          
          This was originally donw with the following:
          
-         Iteration 1:
+         Iteration 1: (obsolete) -
          
          if itemArray[indexPath.row].done == false {
             itemArray[indexPath.row].done = true
@@ -187,11 +194,11 @@ class ToDoListViewController: UITableViewController {
            
             /*
              Different methods used to create an element called newItem
-             Iteration 1 - add an element to an array
+             Iteration 1 - (obsolete) - add an element to an array
              
              self.itemArray.append(textField.text!)
              
-             Iteration 2 - Move to MVC; initialize newItem from the Item class which was defined in Item.swift
+             Iteration 2 - (obsolete) - Move to MVC; initialize newItem from the Item class which was defined in Item.swift
              
              let newItem = Item()
              
@@ -208,7 +215,7 @@ class ToDoListViewController: UITableViewController {
             self.itemArray.append(newItem)
             
             /*
-             Iteration 1 -
+             Iteration 1 (obsolete) -
              First we used user defaults and created a "defaults" object to store an itemArray.  We're now storing array information in a documents folder on the phone.  The obsoleted code follows below.
              
              // Add element to userdefaults.  TodoListArray identifies the array within the defaults.  CAUTION: default is updated with latest array information in a plist but defaults must be explicitly read from in order to populate the tableView with saved data
@@ -240,7 +247,7 @@ class ToDoListViewController: UITableViewController {
     
     func saveItems() {
         
-        /* Iteration 2 - Using the dataFilePath, encode the itemArray data and write it to that path
+        /* Iteration 2 (obsolete) - Using dataFilePath, encode itemArray data and write it to path
          
          Create an encoder, initialize it and use it to encode itemArray
          
@@ -268,14 +275,14 @@ class ToDoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-    func loadItems() {
+    // The following function loads items into itemArray and returns it; note use of "with" as external param and "request" as internal param.  Also note that in the event no param is passed, a default value to param is passed; this param is Item.fetchRequest()
+    
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
         
-        /* Iteration 2 - Using the dataFilePath URL, create a constant named data and set it to Data
-        
-        Create a decoder, initialize it and use it to encode itemArray
+        /* Iteration 2 - (obaolete) Using dataFilePath URL, create constant named data; set it to Data
         
          if let data = try? Data(contentsOf: dataFilePath!) {
-             // Create a decoder
+             // Create a decoder, initialize it and use it to encode itemArray
              let decoder = PropertyListDecoder()
              do {
                  itemArray =  try decoder.decode([Item].self, from: data)
@@ -285,10 +292,13 @@ class ToDoListViewController: UITableViewController {
          }
         */
         
-        /* Iteration 3 moves to CoreData and begins below */
+        /* Iteration 3 moves to CoreData and begins below
+         (obsolete) - Originlly, we created a constant named request, of type NSFetchRequest.  In doing so, the datatype MUST be specified and you MUST also specify the entity that you're trying to request.  However, line below is no longer required since the loadItems function now takes request as a param
+         
+         let request : NSFetchRequest<Item> = Item.fetchRequest()
+         
+         */
         
-        // Create a constant named request, of type NSFetchRequest.  Note that in this instance, the datatype MUST be specified and you MUST also specify the entity that you're trying to request
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
         // App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray
         do {
             itemArray = try context.fetch(request)
@@ -296,9 +306,29 @@ class ToDoListViewController: UITableViewController {
             print("Error fetching data from context \(error)")
         }
         
+        tableView.reloadData()
+    }
+}
+
+//MARK: - Search bar methods
+
+// Create extension to extend the base VC
+extension ToDoListViewController : UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        // Create a request constant which fetches data from Item and returns it as an array
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        
+        //Sort the returned data and apply the sortdescriptors to the request
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        //Get data based on the above constraints
+        loadItems(with: request)
         
     }
-    
 }
 
 
