@@ -329,6 +329,20 @@ extension ToDoListViewController : UISearchBarDelegate {
         loadItems(with: request)
         
     }
+    
+    //Create delegate method which is triggered anytime content of the searchbar field changes, but specifically when the length of searchbar text has gone down to 0
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            // Call loadItems() with no parameter so that it will run the default request
+            loadItems()
+            
+            // Must get rid of onscreen keyboard at this point so we force the searchbar to resign as first responder.  To do this, need to use DispatchQueue on the main thread
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+            
+        }
+    }
 }
 
 
