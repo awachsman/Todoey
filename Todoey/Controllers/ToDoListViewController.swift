@@ -12,24 +12,30 @@ import CoreData
 // The ToDoListViewController is the delegate for the UISearchBar
 class ToDoListViewController: UITableViewController {
     /* Iteration 1 - (obsolete) -
-     Initially, an array with 3 todo items was created which served to populate cells 1, 2 and 3 in the tableView.
+     Create an array with 3 todo items which populate 3 cells in tableView.
      
      var itemArray = ["Buy eggs", "Study Swift", "Go out to Dinner"]
      
-     However, this has been commented out as we moved to MVC design in Iteration 2.
-    
      Iteration 2 - (obsolete) -
+     Under MVC, array is driven by Item class initialized in Item.swift
      
-     *Using MVC, use an array based on the Item class initialized in Item.swift
+     Iteration 3
+     With implementation of Core Data, and creation of the CatgoryVC, instead of loading itemArray with all Items, we need to filter it to the items which match the selected category.  This happens in the prepare(for segue:... method in TableView Delegate Methods
      */
     
     var itemArray = [Item]()
+    
+    var selectedCategory: Category? {
+        didSet {
+            loadItems()
+        }
+    }
     
     //Convert the AppDelegate class to an object in order to get at .persistentContainer; assign the result to a constant called context
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     /* Iteration 1 - (obsolete) -
-      We started with user defaults but after moving to MVC, determined that defaults could not save non-standard datatypes created from the Item.swift file. Therefore, that code, which created a "defaults" constant based on UserDefaults.standard, is commented out below
+      We started with user defaults but under MVC, found that defaults could not save non-standard datatypes created from the Item.swift file. Therefore, the "defaults" constant based on UserDefaults.standard, is commented out below
      
      // Ceate a standard user defaults database
      let defaults = UserDefaults.standard
@@ -40,16 +46,15 @@ class ToDoListViewController: UITableViewController {
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         // History -
-        /* Iteration 1 (obsolete) - Items are saved in a user defaults file named "defaults". "defaults" loads the tableview as follows:
+        /* Iteration 1 (obsolete) - Items are saved in a user defaults file named "defaults" which loads the tableview as follows:
          if let items = defaults.array(forKey: "TodoListArray") as? [String] {
              itemArray = items
          }
-         Iteration 2 - (obsolete) - Code above was obsoleted once we applied MVC.  Items are now initialized based on class named Item, as defined in Item.swift.  The IBAction addButtonPressed contains  "self.defaults.set(self.itemArray, forKey: "TodoListArray")" which saves the array in the user defaults named "defaults".
+         Iteration 2 - (obsolete) - Code above was obsoleted once we applied MVC.  Items are now initialized based on Item class as defined in Item.swift.  IBAction addButtonPressed contains  "self.defaults.set(self.itemArray, forKey: "TodoListArray")" which saves the array in the user defaults named "defaults".
          // This code substitutes for code in Iteration 1 and reflects MVC
         */
         
-        
-        /* The harcoded items below are no longer required since we now load the itemArray with records from the plist in dataFilePath
+        /* The harcoded items below are obsolete since we now load the itemArray with records from the plist in dataFilePath
          
         let newItem = Item()
         newItem.title = "Buy eggs"
@@ -65,12 +70,14 @@ class ToDoListViewController: UITableViewController {
         */
         
         /*
-         Call loadItems() to load items from SQLite using CoreData. Note - no param provided to loadItems() below since a default param of Item.fetchRequest has been specified in the function's  definition
+         Originally, we called loadItems() at this point to load items from SQLite using CoreData. Note - no param provided to loadItems() below since a default param of Item.fetchRequest has been specified in the function's  definition.  However, we're now calling loadItems() to match the selected category in the didSet method when we declared the var selectedCategory
+         
+         loadItems()
          */
         
-        loadItems()
         
-        /* Iteration 1 - obsolete -used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type.
+        
+        /* Iteration 1 - obsolete - used user defaults in a file named "defaults".  That has been obsoleted since defaults can't accept a complex data type like Items (as created in the Item class in Item.swift.  That has been changed to an NSCoder type.
          
          if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
             itemArray = items
@@ -78,6 +85,8 @@ class ToDoListViewController: UITableViewController {
          */
         
     }
+    
+    //MARK: - TableView DataSource Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
@@ -93,7 +102,7 @@ class ToDoListViewController: UITableViewController {
         let item = itemArray[indexPath.row]
         
         /*
-         There are several ways to turn the checkmark on and off
+         Mehods to turn the checkmark on and off
          Method 1: (obsolete) - This was the original method before we defined the constant called item.  Instead it used "itemArray[indexPath.row" and then used an if-else to set the accessoryType to .checkmark or  to .none
          
          cell.textLabel?.text = itemArray[indexPath.row].title
@@ -165,7 +174,7 @@ class ToDoListViewController: UITableViewController {
         
         //tableView.reloadData()  // This now exists in saveItems()
         
-        // Comment/code below commented out, since we've moved to MVC, and the completed/non-completed status of an item is now handled by Item.swift in the Data model folder
+        // Under MVCV, comment/code below commented outC, and the item's completed/non-completed status is handled by Item.swift in the Data model folder
         
         // If seleted cell already has a checkmark, remove it, otherwise add it
 //        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
@@ -205,20 +214,22 @@ class ToDoListViewController: UITableViewController {
              Iteration 3 - Move to CoreData.  See below
              */
             
-            /*Iteration 3 begins here. Set newItem to the viewContext of our persistent container as specified in AppDelegate.swift.
-             Also note that since the done field in DataModel.xcdatamodeld is not optional, we need to provide a value for the done field
+            /*Iteration 3 begins here. Set newItem to the viewContext of  persistent container, specified in AppDelegate.swift.
+             Note that since the done field in DataModel.xcdatamodeld is not optional, must provide a value for the done field
              */
             
             let newItem = Item(context: self.context)
             newItem.title = textField.text!
             newItem.done = false
+            // NOTE: With the introduction of the relationship between Category and Item, must now also specify the parent Category
+            newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             
             /*
              Iteration 1 (obsolete) -
              First we used user defaults and created a "defaults" object to store an itemArray.  We're now storing array information in a documents folder on the phone.  The obsoleted code follows below.
              
-             // Add element to userdefaults.  TodoListArray identifies the array within the defaults.  CAUTION: default is updated with latest array information in a plist but defaults must be explicitly read from in order to populate the tableView with saved data
+             // Add element to userdefaults.  TodoListArray identifies the array within the defaults.  CAUTION: default is updated with latest array information in a plist but defaults present(alert, animated: true, completion: nil)must be explicitly read from in order to populate the tableView with saved data
              
              self.defaults.set(self.itemArray, forKey: "TodoListArray")
              
@@ -277,7 +288,7 @@ class ToDoListViewController: UITableViewController {
     
     // The following function loads items into itemArray and returns it; note use of "with" as external param and "request" as internal param.  Also note that in the event no param is passed, a default value to param is passed; this param is Item.fetchRequest()
     
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
         
         /* Iteration 2 - (obaolete) Using dataFilePath URL, create constant named data; set it to Data
         
@@ -293,13 +304,23 @@ class ToDoListViewController: UITableViewController {
         */
         
         /* Iteration 3 moves to CoreData and begins below
-         (obsolete) - Originlly, we created a constant named request, of type NSFetchRequest.  In doing so, the datatype MUST be specified and you MUST also specify the entity that you're trying to request.  However, line below is no longer required since the loadItems function now takes request as a param
+         Note that we originlly, a constant named request, of type NSFetchRequest was created.  In doing so, both the datatype and the entity that you're trying to request MUST be specified.  However, line below is no longer required since the loadItems function now takes request as a param
          
          let request : NSFetchRequest<Item> = Item.fetchRequest()
-         
          */
         
-        // App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray
+        /* Iteration 4 expands on Iteration 3 and continues to use Core Data but since we need to load items which match a category, we need to constrain the items to thoe which match the selected category.  Using the predicate and compundPredicate below allows this */
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        if let additionalPredicate = predicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
+        /* App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray*/
+        
         do {
             itemArray = try context.fetch(request)
         } catch {
@@ -320,13 +341,13 @@ extension ToDoListViewController : UISearchBarDelegate {
         let request : NSFetchRequest<Item> = Item.fetchRequest()
         
         // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
-        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
         
         //Sort the returned data and apply the sortdescriptors to the request
         request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
         
         //Get data based on the above constraints
-        loadItems(with: request)
+        loadItems(with: request, predicate: predicate)
         
     }
     
@@ -340,9 +361,6 @@ extension ToDoListViewController : UISearchBarDelegate {
             DispatchQueue.main.async {
                 searchBar.resignFirstResponder()
             }
-            
         }
     }
 }
-
-
