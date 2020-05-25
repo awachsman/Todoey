@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreData
+import RealmSwift
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -16,8 +17,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        //For test purposes, the code below can be used to print the path for the user defaults file (named "defaults"); defaults holds the array which contains the todo list items
-        //print(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last! as String)
+        
+        // For  diagnostic and informational purposes, print the location of Realm as it exists in the app
+        print(Realm.Configuration.defaultConfiguration.fileURL)
+        
+        /*
+         Iteration 1 - For test purposes, create a new data object of class Data() - add test variables
+         
+         let data = Data()
+         data.name = "Abe"
+         data.age = 50
+         
+         //Create a new constant from the Realm class
+         do {
+            let realm = try Realm()
+                try realm.write() {
+                    realm.add(data)
+                }
+            } catch {
+                print("Error initializaing new realm, \(error)")
+            }
+                 
+            return true
+         */
+        
+        //Create a new constant from the Realm class
+        do {
+            let realm = try Realm()
+        } catch {
+            print("Error initializaing new realm, \(error)")
+        }
         
         return true
     }

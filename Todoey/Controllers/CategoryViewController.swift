@@ -7,33 +7,37 @@
 //
 
 import UIKit
-import CoreData
+//import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
+    
+    // Now using Realm:
+    //Try to initialize a new Realm
+    
+    let realm = try! Realm()
 
     // Create array of category objects, imnitialized as an empty array
-    var categoryArray = [Category]()
+    var categories = [Category]()
     
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        loadCategories()
+        //loadCategories()
     }
 
     //MARK: - TableView Datasource Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryArray.count
+        return categories.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
         
-        let category = categoryArray[indexPath.row]
-        
-        cell.textLabel?.text = category.name
+        cell.textLabel?.text = categories[indexPath.row].name
         //cell.accessoryType = item.done ? .checkmark : .none
         
         return cell
@@ -52,9 +56,8 @@ class CategoryViewController: UITableViewController {
         
         // Grab the category that corresposnds to the selected cell.  You get this by getting the indexPathForSelectedRow
         if let indexPath = tableView.indexPathForSelectedRow {
-            destinationVC.selectedCategory = categoryArray[indexPath.row]
+            destinationVC.selectedCategory = categories[indexPath.row]
         }
-        
     }
     
     //MARK: - Adsd New Categories
@@ -64,52 +67,80 @@ class CategoryViewController: UITableViewController {
         var textField = UITextField()  // 1
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)  // 2
         let action = UIAlertAction(title: "Add", style: .default) { (action) in  // 3
-           
-            let newCategory = Category(context: self.context)
+           /* Iteration 1 (obsolete) - uses CoreData whose classes were category and Item
+             let newCategory = Category(context: self.context)
+             */
+            /*
+             Iteration 2 - uses Realm
+             */
+            let newCategory = Category()
             newCategory.name = textField.text!
-            self.categoryArray.append(newCategory)
+            self.categories.append(newCategory)
             
-            self.saveCategories()
+            /* Iteration 1 - obsolete - uses CoreData
+             self.saveCategories()
+             */
+            /* Iteration 2 - using Realm*/
+            self.save(category: newCategory)
             
         }
-        alert.addTextField { (alertTextField) in // 4
+        alert.addAction(action) // 4
+        
+        alert.addTextField { (field) in // 5
             
-            alertTextField.placeholder = "Add a new category"
-            
-            textField = alertTextField
+        textField = field
+        textField.placeholder = "Add a new category"
         }
         
-        alert.addAction(action) // 5
+        
         
         present(alert, animated: true, completion: nil)  // 6
         
     }
     
     //MARK: - Data Manipulation methods
+    /*
+    Iteration 1 - obsolete - used CoreData
+     
+     func saveCategories() {
+         do {
+             try context.save()
+         } catch {
+             print("Error saving category, \(error)")
+         }
+         
+         // refresh the tableView to display added item
+         self.tableView.reloadData()
+     }
+    */
     
-    func saveCategories() {
-       
-           do {
-               try context.save()
-           } catch {
-               print("Error saving category, \(error)")
-           }
-           
-           // refresh the tableView to display added item
-           self.tableView.reloadData()
-       }
-    
-    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
-        
-        
-        // App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray
+    /*Iteration 2 - uses Realm */
+    func save(category: Category) {
         do {
-            categoryArray = try context.fetch(request)
+            try realm.write {
+                realm.add(category)
+            }
         } catch {
-            print("Error loading categories \(error)")
+            print("Error saving category, \(error)")
         }
         
-        tableView.reloadData()
+        // refresh the tableView to display added item
+        self.tableView.reloadData()
     }
-       
+ 
+    /* Iteration 1 - bsolete - uses CoreData
+     
+     func loadCategories() {
+
+         // App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray
+         let request : NSFetchRequest<Category> = Category.fetchRequest()
+
+         do {
+             categories = try context.fetch(request)
+         } catch {
+             print("Error loading categories \(error)")
+         }
+         tableView.reloadData()
+     }
+     */
 }

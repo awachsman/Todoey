@@ -27,7 +27,7 @@ class ToDoListViewController: UITableViewController {
     
     var selectedCategory: Category? {
         didSet {
-            loadItems()
+            //loadItems()
         }
     }
     
@@ -214,17 +214,20 @@ class ToDoListViewController: UITableViewController {
              Iteration 3 - Move to CoreData.  See below
              */
             
-            /*Iteration 3 begins here. Set newItem to the viewContext of  persistent container, specified in AppDelegate.swift.
+            /*Iteration 3 - obsolete - uses CoreData
+             
+             Set newItem to the viewContext of  persistent container, specified in AppDelegate.swift.
              Note that since the done field in DataModel.xcdatamodeld is not optional, must provide a value for the done field
-             */
-            
+             
             let newItem = Item(context: self.context)
             newItem.title = textField.text!
             newItem.done = false
             // NOTE: With the introduction of the relationship between Category and Item, must now also specify the parent Category
+                         
             newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
-            
+             */
+
             /*
              Iteration 1 (obsolete) -
              First we used user defaults and created a "defaults" object to store an itemArray.  We're now storing array information in a documents folder on the phone.  The obsoleted code follows below.
@@ -288,79 +291,79 @@ class ToDoListViewController: UITableViewController {
     
     // The following function loads items into itemArray and returns it; note use of "with" as external param and "request" as internal param.  Also note that in the event no param is passed, a default value to param is passed; this param is Item.fetchRequest()
     
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
-        
-        /* Iteration 2 - (obaolete) Using dataFilePath URL, create constant named data; set it to Data
-        
-         if let data = try? Data(contentsOf: dataFilePath!) {
-             // Create a decoder, initialize it and use it to encode itemArray
-             let decoder = PropertyListDecoder()
-             do {
-                 itemArray =  try decoder.decode([Item].self, from: data)
-             } catch {
-                 print("Error decoding item array, \(error)")
-             }
-         }
-        */
-        
-        /* Iteration 3 moves to CoreData and begins below
-         Note that we originlly, a constant named request, of type NSFetchRequest was created.  In doing so, both the datatype and the entity that you're trying to request MUST be specified.  However, line below is no longer required since the loadItems function now takes request as a param
-         
-         let request : NSFetchRequest<Item> = Item.fetchRequest()
-         */
-        
-        /* Iteration 4 expands on Iteration 3 and continues to use Core Data but since we need to load items which match a category, we need to constrain the items to thoe which match the selected category.  Using the predicate and compundPredicate below allows this */
-        
-        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
-        
-        if let additionalPredicate = predicate {
-            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
-        } else {
-            request.predicate = categoryPredicate
-        }
-        
-        /* App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray*/
-        
-        do {
-            itemArray = try context.fetch(request)
-        } catch {
-            print("Error fetching data from context \(error)")
-        }
-        
-        tableView.reloadData()
-    }
+//    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
+//
+//        /* Iteration 2 - (obaolete) Using dataFilePath URL, create constant named data; set it to Data
+//
+//         if let data = try? Data(contentsOf: dataFilePath!) {
+//             // Create and initialize decoder; use it to encode itemArray
+//             let decoder = PropertyListDecoder()
+//             do {
+//                 itemArray =  try decoder.decode([Item].self, from: data)
+//             } catch {
+//                 print("Error decoding item array, \(error)")
+//             }
+//         }
+//        */
+//
+//        /* Iteration 3 moves to CoreData and begins below
+//         Note that we originlly, a constant named request, of type NSFetchRequest was created.  In doing so, both the datatype and the entity that you're trying to request MUST be specified.  However, line below is no longer required since the loadItems function now takes request as a param
+//
+//         let request : NSFetchRequest<Item> = Item.fetchRequest()
+//         */
+//
+//        /* Iteration 4 expands on Iteration 3 and continues to use Core Data but since we need to load items which match a category, we need to constrain the items to thoe which match the selected category.  Using the predicate and compundPredicate below allows this */
+//
+//        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+//
+//        if let additionalPredicate = predicate {
+//            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+//        } else {
+//            request.predicate = categoryPredicate
+//        }
+//
+//        /* App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray*/
+//
+//        do {
+//            itemArray = try context.fetch(request)
+//        } catch {
+//            print("Error fetching data from context \(error)")
+//        }
+//
+//        tableView.reloadData()
+//    }
 }
 
 //MARK: - Search bar methods
 
-// Create extension to extend the base VC
-extension ToDoListViewController : UISearchBarDelegate {
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        // Create a request constant which fetches data from Item and returns it as an array
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
-        
-        // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
-        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-        
-        //Sort the returned data and apply the sortdescriptors to the request
-        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-        
-        //Get data based on the above constraints
-        loadItems(with: request, predicate: predicate)
-        
-    }
-    
-    //Create delegate method which is triggered anytime content of the searchbar field changes, but specifically when the length of searchbar text has gone down to 0
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchBar.text?.count == 0 {
-            // Call loadItems() with no parameter so that it will run the default request
-            loadItems()
-            
-            // Must get rid of onscreen keyboard at this point so we force the searchbar to resign as first responder.  To do this, need to use DispatchQueue on the main thread
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
-        }
-    }
-}
+//// Create extension to extend the base VC
+//extension ToDoListViewController : UISearchBarDelegate {
+//
+//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+//        // Create a request constant which fetches data from Item and returns it as an array
+//        let request : NSFetchRequest<Item> = Item.fetchRequest()
+//
+//        // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
+//        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+//
+//        //Sort the returned data and apply the sortdescriptors to the request
+//        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+//
+//        //Get data based on the above constraints
+//        loadItems(with: request, predicate: predicate)
+//
+//    }
+//
+//    //Create delegate method which is triggered anytime content of the searchbar field changes, but specifically when the length of searchbar text has gone down to 0
+//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+//        if searchBar.text?.count == 0 {
+//            // Call loadItems() with no parameter so that it will run the default request
+//            loadItems()
+//
+//            // Must get rid of onscreen keyboard at this point so we force the searchbar to resign as first responder.  To do this, need to use DispatchQueue on the main thread
+//            DispatchQueue.main.async {
+//                searchBar.resignFirstResponder()
+//            }
+//        }
+//    }
+//}
