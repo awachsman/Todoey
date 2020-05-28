@@ -7,37 +7,37 @@
 //
 
 import UIKit
-//import CoreData
 import RealmSwift
 
 class CategoryViewController: UITableViewController {
     
-    // Now using Realm:
-    //Try to initialize a new Realm
-    
-    let realm = try! Realm()
+    let realm = try! Realm()  //Try to initialize a new Realm
 
-    // Create array of category objects, imnitialized as an empty array
-    var categories = [Category]()
+    // Change array type from list of category objects to Results datatype
+    //var categories = [Category]()
+    var categories: Results<Category>?
     
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    /*
+     Delete CoreData-specific code below
+     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+     */
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        //loadCategories()
+        loadCategories()
     }
 
     //MARK: - TableView Datasource Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categories.count
+        return categories?.count ?? 1  // nil coalescing operator
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
         
-        cell.textLabel?.text = categories[indexPath.row].name
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet."
         //cell.accessoryType = item.done ? .checkmark : .none
         
         return cell
@@ -56,31 +56,31 @@ class CategoryViewController: UITableViewController {
         
         // Grab the category that corresposnds to the selected cell.  You get this by getting the indexPathForSelectedRow
         if let indexPath = tableView.indexPathForSelectedRow {
-            destinationVC.selectedCategory = categories[indexPath.row]
+            destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
     
-    //MARK: - Adsd New Categories
+    //MARK: - Add New Categories
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
         var textField = UITextField()  // 1
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)  // 2
         let action = UIAlertAction(title: "Add", style: .default) { (action) in  // 3
-           /* Iteration 1 (obsolete) - uses CoreData whose classes were category and Item
-             let newCategory = Category(context: self.context)
-             */
-            /*
-             Iteration 2 - uses Realm
-             */
+           /* Iteration 1 (obsolete) - used CoreData */
+            
+            //Iteration 2 - uses Realm
             let newCategory = Category()
             newCategory.name = textField.text!
-            self.categories.append(newCategory)
-            
-            /* Iteration 1 - obsolete - uses CoreData
-             self.saveCategories()
+            /* Results datatype is autoupdating container, no longer need append
+             self.categories.append(newCategory)
              */
-            /* Iteration 2 - using Realm*/
+            
+            
+            /* Saving data
+             Iteration 1 - obsolete - used CoreData */
+            
+            // Iteration 2 - using Realm
             self.save(category: newCategory)
             
         }
@@ -92,29 +92,14 @@ class CategoryViewController: UITableViewController {
         textField.placeholder = "Add a new category"
         }
         
-        
-        
-        present(alert, animated: true, completion: nil)  // 6
-        
+        present(alert, animated: true, completion: nil)  // 6o
     }
     
     //MARK: - Data Manipulation methods
     /*
-    Iteration 1 - obsolete - used CoreData
-     
-     func saveCategories() {
-         do {
-             try context.save()
-         } catch {
-             print("Error saving category, \(error)")
-         }
-         
-         // refresh the tableView to display added item
-         self.tableView.reloadData()
-     }
-    */
+    Iteration 1 - obsolete - used CoreData */
     
-    /*Iteration 2 - uses Realm */
+    /*Iteration 2 - use Realm */
     func save(category: Category) {
         do {
             try realm.write {
@@ -124,23 +109,18 @@ class CategoryViewController: UITableViewController {
             print("Error saving category, \(error)")
         }
         
-        // refresh the tableView to display added item
         self.tableView.reloadData()
     }
  
-    /* Iteration 1 - bsolete - uses CoreData
+    
      
-     func loadCategories() {
+    func loadCategories() {
+        /* Iteration 1 - obsolete - uses CoreData */
+        
+        /* Iteration 2 - uses Realm */
+        categories = realm.objects(Category.self)
 
-         // App must speak to the context.  Since this can throw an error, need to encapsulate in a do/try/catch.  Assign the results of the context.fetchrequest to itemArray
-         let request : NSFetchRequest<Category> = Category.fetchRequest()
-
-         do {
-             categories = try context.fetch(request)
-         } catch {
-             print("Error loading categories \(error)")
-         }
          tableView.reloadData()
      }
-     */
+    
 }

@@ -12,6 +12,6 @@ import RealmSwift
 class Category: Object {
     @objc dynamic var name: String = ""
     
-    // Define the forward relationship between Category and Item as a List of array items which will initially be empty
+    // Define the forward relationship between Category and Item as a List of item objects which will initially be empty
     let items = List<Item>()
 }
