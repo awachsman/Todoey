@@ -81,13 +81,23 @@ class ToDoListViewController: UITableViewController {
     }
     
     //MARK: - TableView Delegate Methods
-    // Checkmark accessory is invoked for the selected item. Selected row flashes gray then reverts to nonselected look
+    // Under Realm, data updating or deleting takes place in function below
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-//        todoItems[indexPath.row].done = !todoItems[indexPath.row].done
-//
-//        self.saveItems()
+        // The code below changes selected item's done status and saves  change to Realm; commented line shows how an item can be deleted
         
+        if let item = todoItems?[indexPath.row] {
+            do {
+                try realm.write {
+                    //realm.delete(item)
+                    item.done = !item.done
+                }
+            } catch {
+                print("Error saving item's done status, \(error)")
+            }
+        }
+
+        tableView.reloadData()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
