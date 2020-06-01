@@ -14,11 +14,10 @@ class CategoryViewController: UITableViewController {
     let realm = try! Realm()  //Try to initialize a new Realm
 
     // Change array type from list of category objects to Results datatype
-    //var categories = [Category]()
     var categories: Results<Category>?
     
     /*
-     Delete CoreData-specific code below
+    CoreData-specific code below is obsolete
      let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
      */
     
@@ -31,14 +30,13 @@ class CategoryViewController: UITableViewController {
     //MARK: - TableView Datasource Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categories?.count ?? 1  // nil coalescing operator
+        return categories?.count ?? 1  // nil coalescing operator.  If there are categories, return their count, otherwise return 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
         
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet."
-        //cell.accessoryType = item.done ? .checkmark : .none
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet."  // if we have categories, populate a cell with category information, otherwise fill a cell with "No categories added yet."
         
         return cell
     }
@@ -100,6 +98,7 @@ class CategoryViewController: UITableViewController {
     Iteration 1 - obsolete - used CoreData */
     
     /*Iteration 2 - use Realm */
+    // Commit changes to Realm
     func save(category: Category) {
         do {
             try realm.write {
@@ -109,7 +108,7 @@ class CategoryViewController: UITableViewController {
             print("Error saving category, \(error)")
         }
         
-        self.tableView.reloadData()
+        self.tableView.reloadData()  // reloadData calls all of the TableView Datasource Methods
     }
  
     
@@ -118,9 +117,10 @@ class CategoryViewController: UITableViewController {
         /* Iteration 1 - obsolete - uses CoreData */
         
         /* Iteration 2 - uses Realm */
+        // Fetch all of the objects that belong to the Category datatype
         categories = realm.objects(Category.self)
 
-         tableView.reloadData()
+         tableView.reloadData() // reloadData calls all of the TableView Datasource Methods
      }
     
 }

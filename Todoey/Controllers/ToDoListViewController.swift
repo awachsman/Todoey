@@ -17,7 +17,7 @@ class ToDoListViewController: UITableViewController {
      Under MVC, array is driven by Item class initialized in Item.swift
      
      Iteration 3
-     With Core Dataand creation of CatgoryVC, itemArray is filtered to  items which match selected category.  This happens in the prepare(for segue:... method in TableView Delegate Methods
+     With Core Data and creation of CatgoryVC, itemArray is filtered to  items which match selected category.  This happens in the prepare(for segue:... method in TableView Delegate Methods
      */
     
     var todoItems: Results<Item>?
@@ -130,6 +130,7 @@ class ToDoListViewController: UITableViewController {
                     try self.realm.write {
                         let newItem = Item()
                         newItem.title = textField.text!
+                        newItem.dateCreated = Date()
                         currentCategory.items.append(newItem)
                     }
                 } catch {
@@ -144,7 +145,7 @@ class ToDoListViewController: UITableViewController {
         alert.addTextField { (alertTextField) in
             // 4a. set up the text field's attributes
             alertTextField.placeholder = "Create new item"
-            //4b. textfield can't be printed or added to the itemArray from here (since at this point we're just presenting the UIAlertController) but we can store whatever value the user types into the textField var which is accessible throughut the IBAction.
+            //4b. textfield can't be printed from here (since at this point we're just presenting the UIAlertController) but we can store whatever value the user types into the textField var which is accessible throughut the IBAction.
             textField = alertTextField
         }
         //5. Add the action which was created in steps 3 and 4 to the alert
@@ -165,35 +166,63 @@ class ToDoListViewController: UITableViewController {
 }
 
 //MARK: - Search bar methods
+/* Iteration 1 - obsolete - ToDoListVC extension as designed for CoreData.
+// Create extension to extend the base VC
+extension ToDoListViewController : UISearchBarDelegate {
 
-//// Create extension to extend the base VC
-//extension ToDoListViewController : UISearchBarDelegate {
-//
-//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-//        // Create a request constant to fetch data from Item and return it as an array
-//        let request : NSFetchRequest<Item> = Item.fetchRequest()
-//
-//        // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
-//        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-//
-//        //Apply the sortdescriptors to the request
-//        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-//
-//        //Get data based on the above constraints
-//        loadItems(with: request, predicate: predicate)
-//
-//    }
-//
-//    //Create delegate method which is triggered when content of the searchbar field changes, but specifically when length of searchbar text goes down to 0
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        if searchBar.text?.count == 0 {
-//            // Call loadItems() with no parameter so that it runs the default request
-//            loadItems()
-//
-//            // To get rid of onscreen keyboard at this point we force the searchbar to resign as first responder.  To do this, need to use DispatchQueue on the main thread
-//            DispatchQueue.main.async {
-//                searchBar.resignFirstResponder()
-//            }
-//        }
-//    }
-//}
+func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+Create request constant to fetch data from Item and return it as an array
+    let request : NSFetchRequest<Item> = Item.fetchRequest()
+ 
+    // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
+    let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+ 
+    //Apply the sortdescriptors to the request
+    request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+ 
+    //Get data based on the above constraints
+    loadItems(with: request, predicate: predicate)
+ 
+    }
+    //Create delegate method, triggered when searchbar's fieldcontent     changes, including when length of searchbar text goes down to 0
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            // Call loadItems() with no parameter so as to run the default request
+            loadItems()
+ 
+            // To dismiss onscreen keyboard, force the searchbar to resign as first responder by using DispatchQueue on main thread
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+}
+*/
+
+// Iteration 2 - using Realm for querying
+// Create extension to extend the base VC
+extension ToDoListViewController : UISearchBarDelegate {
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        //Use searchbar content to filter and sort our ToDoList items   
+        todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+        
+        tableView.reloadData()
+        
+        
+    }
+
+    //Create delegate method; is triggered when searchbar field's content changes, including when length of searchbar text goes down to 0
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+        // Call loadItems() with no param so that it runs the default request
+            loadItems()
+
+        // Get rid of onscreen keyboard at this point by forcing searchbar to resign as first responder.  To do this, need to use DispatchQueue on the main thread
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+}
