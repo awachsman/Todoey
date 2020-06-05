@@ -5,19 +5,23 @@
 //  Created by Philipp Muellauer on 02/12/2019.
 //  Copyright © 2019 App Brewery. All rights reserved.
 //
-
+/*
+ 1. Changed class definition so that inheritance is from SwipeTableViewController instead of UITableViewController
+ 2. Comment out let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath) and replace with let cell = super.tableView(tableView, cellForRowAt: indexPath)
+ 
+ */
 import UIKit
 import RealmSwift
 
 // The ToDoListViewController is the delegate for the UISearchBar
-class ToDoListViewController: UITableViewController {
-    /* Iteration 1 - (obsolete) - Create an array with 3 todo items which populate 3 cells in tableView.
+class ToDoListViewController: SwipeTableViewController {
+    /* Iteration 1 - (obsolete) - Create array with todo items which populate tableView cells.
      
      Iteration 2 - (obsolete) -
      Under MVC, array is driven by Item class initialized in Item.swift
      
      Iteration 3
-     With Core Data and creation of CatgoryVC, itemArray is filtered to  items which match selected category.  This happens in the prepare(for segue:... method in TableView Delegate Methods
+     With Core Data and creation of CatgoryVC, itemArray is filtered to selected category. This happens in the prepare(for segue:... method in TableView Delegate Methods
      */
     
     var todoItems: Results<Item>?
@@ -41,14 +45,14 @@ class ToDoListViewController: UITableViewController {
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         // History -
-        /* Iteration 1 (obsolete) - User's items saved in a defaults file  which loads the tableview as follows:
+        /* Iteration 1 (obsolete) - Items saved in a defaults file  which loads the tableview as follows:
          if let items = defaults.array(forKey: "TodoListArray") as? [String] {
              itemArray = items
          }
-         Iteration 2 - (obsolete) - Under MVC, code above was obsoleted. Items are now initialized based on Item class, defined in Item.swift.  IBAction addButtonPressed contains  "self.defaults.set(self.itemArray, forKey: "TodoListArray")" which saves the array in the user defaults named "defaults".
+         Iteration 2 - (obsolete) - Under MVC, items are initialized based on Item class, defined in Item.swift.  addButtonPressed contains  "self. defaults. set(self.itemArray, forKey: "TodoListArray")", saving array to the user defaults named "defaults".
         */
         
-        /* Iteration 3 - Originally, we called loadItems() at this point to load items using CoreData. Note [no param provided to loadItems() below since a default param of Item.fetchRequest has been specified in the function's  definition].  We now call loadItems() to match the selected category in the didSet method when we declared the var selectedCategory
+        /* Iteration 3 - Originally, we called loadItems() at this point to load items using CoreData. Note -[no param passed to loadItems() since default param of Item. fetchRequest is specified in the function definition].  We now call loadItems() to match selected category in didSet method when we declared the var selectedCategory
          
          loadItems()
          */
@@ -63,10 +67,11 @@ class ToDoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        
+        /* Obsolete - Now using superclass's cell definition named "Cell"
+         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)*/
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         /*
-        Create constant named item; set its value to todoItems?[indexPath].row.  This allows us to use that constant wherever itemArray[indexPath].row is called in this function
+        Create constant "item",set its value to todoItems?[indexPath].row.  This allows us to use that constant wherever itemArray[indexPath].row is called in this function
         */
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
@@ -77,7 +82,21 @@ class ToDoListViewController: UITableViewController {
         }
         
         return cell
-        
+    }
+    
+    ///MARK: - Delete Data From Swipe
+    override func updateModel(at indexPath: IndexPath) {
+        if let item = todoItems?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(item)
+                    
+                }
+            } catch {
+                print("Error deleting item, \(error)")
+            }
+            //tableView.reloadData()
+        }
     }
     
     //MARK: - TableView Delegate Methods
@@ -105,7 +124,7 @@ class ToDoListViewController: UITableViewController {
     //MARK: - Add New Items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
-        //NOTE:  Understanding of scope for variables is necessary to follow sequence of events below.  6                        steps are:
+        //NOTE:  Understanding of scope for variables is necessary to follow sequence of events below.  6 steps are:
         
         //1. Initialize textField (accessible throughout this IBAction) to hold whatever is in text field created in UIAlertController
         var textField = UITextField()
@@ -166,40 +185,9 @@ class ToDoListViewController: UITableViewController {
 }
 
 //MARK: - Search bar methods
-/* Iteration 1 - obsolete - ToDoListVC extension as designed for CoreData.
-// Create extension to extend the base VC
-extension ToDoListViewController : UISearchBarDelegate {
+/* Iteration 1 - obsolete - ToDoListVC extension was designed for CoreData. The extension has been rewritten for Realm */
 
-func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-Create request constant to fetch data from Item and return it as an array
-    let request : NSFetchRequest<Item> = Item.fetchRequest()
- 
-    // Create query to constrain the fetch (cd means case and diacritic insensitive) and add query to request
-    let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
- 
-    //Apply the sortdescriptors to the request
-    request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
- 
-    //Get data based on the above constraints
-    loadItems(with: request, predicate: predicate)
- 
-    }
-    //Create delegate method, triggered when searchbar's fieldcontent     changes, including when length of searchbar text goes down to 0
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchBar.text?.count == 0 {
-            // Call loadItems() with no parameter so as to run the default request
-            loadItems()
- 
-            // To dismiss onscreen keyboard, force the searchbar to resign as first responder by using DispatchQueue on main thread
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
-        }
-    }
-}
-*/
-
-// Iteration 2 - using Realm for querying
+/* Iteration 2 - using Realm for querying */
 // Create extension to extend the base VC
 extension ToDoListViewController : UISearchBarDelegate {
 
@@ -209,7 +197,6 @@ extension ToDoListViewController : UISearchBarDelegate {
         todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
         
         tableView.reloadData()
-        
         
     }
 
