@@ -4,10 +4,11 @@
 //
 //  Created by Abraham Wachsman on 5/17/20.
 //  Copyright © 2020 App Brewery. All rights reserved.
-//  Real file path: Macintosh HD/Users/awachsman/Library/Developer/CoreSimulator/Devices/<Latest device>/data/containers/Data/Application<latest application>/Douments/default.realm
+//  Realm file path: Macintosh HD/Users/awachsman/Library/Developer/CoreSimulator/Devices /<Latest device>/data/containers/Data/Application<latest application>/Douments/default.realm
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 
 // CategoryViewController is a sunclass of SwipeTableViewController.
@@ -28,6 +29,9 @@ class CategoryViewController: SwipeTableViewController {
         
         loadCategories()
         
+        // Remove separator between cells
+        tableView.separatorStyle = .none
+        
     }
     
     //MARK: - TableView Datasource Methods
@@ -42,7 +46,13 @@ class CategoryViewController: SwipeTableViewController {
         
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet."  // if categories exist, populate cells with categories, else populate a cell with "No categories added yet."
+        
+        // If categories exist, 1) populate cells with categories, else populate a cell with "No categories added yet." 2) Get the hex backgroundColor from the Categories table;  if the retrieved value is not nil, use that value from the table, otherwise use default of 1D9BF6
+        if let category = categories?[indexPath.row] {
+            cell.textLabel?.text = category.name ?? "No categories added yet."
+            
+        cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].backgroundColor ?? "1D9BF6")
+        }
         
         return cell
     }
@@ -76,6 +86,10 @@ class CategoryViewController: SwipeTableViewController {
             //Iteration 2 - uses Realm
             let newCategory = Category()
             newCategory.name = textField.text!
+            
+            // Save the color in the backgroundColor field of the Categories table
+            newCategory.backgroundColor = RandomFlatColor().hexValue()
+            
             /* Results datatype is autoupdating container, no longer need append
              self.categories.append(newCategory)
              */
