@@ -12,6 +12,7 @@
  */
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 // The ToDoListViewController is the delegate for the UISearchBar
 class ToDoListViewController: SwipeTableViewController {
@@ -44,6 +45,10 @@ class ToDoListViewController: SwipeTableViewController {
         super.viewDidLoad()
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        
+        // Remove cell separators
+        tableView.separatorStyle = .none
+
         // History -
         /* Iteration 1 (obsolete) - Items saved in a defaults file  which loads the tableview as follows:
          if let items = defaults.array(forKey: "TodoListArray") as? [String] {
@@ -75,6 +80,22 @@ class ToDoListViewController: SwipeTableViewController {
         */
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
+            
+            // Must use if..let since the percentage calculation must be a float but the calculation below (i.e. indexPath.row / todoItems?.count) includes an optional term.  Since we only get to this point after verifying that we're at a real indexPath.row location, we can force unwrap
+            
+            //Using optional chaining below. If we get to this point, we know that there is a valid hexcode derived from selectedCategory.backgroundColor, which we can use to generate a valid, non-nil UIColor.
+            if let backgroundColor = UIColor(hexString: selectedCategory!.backgroundColor)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+                
+                cell.backgroundColor = backgroundColor
+                
+                // Apply a contrasting color for text based on computed backroundColor
+                cell.textLabel?.textColor = ContrastColorOf(backgroundColor, returnFlat: true)
+                
+            }
+            
+            //Ternary operator ==>
+            // value = con dition ? valueIfTrue : valueIfFalse
+            
             cell.accessoryType = item.done ? .checkmark : .none
         } else {
             cell.textLabel?.text = "No items Added."
