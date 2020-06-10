@@ -8,6 +8,8 @@
 /*
  1. Changed class definition so that inheritance is from SwipeTableViewController instead of UITableViewController
  2. Comment out let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath) and replace with let cell = super.tableView(tableView, cellForRowAt: indexPath)
+ 3. Identify location of default.realm using print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+
  
  */
 import UIKit
@@ -26,8 +28,10 @@ class ToDoListViewController: SwipeTableViewController {
      */
     
     var todoItems: Results<Item>?
-    
     let realm = try! Realm()  // Create a new realm intancee
+    
+    @IBOutlet weak var searchBar: UISearchBar!
+    
     
     var selectedCategory: Category? {
         didSet {
@@ -44,24 +48,50 @@ class ToDoListViewController: SwipeTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
-        
         // Remove cell separators
         tableView.separatorStyle = .none
-
+        
         // History -
-        /* Iteration 1 (obsolete) - Items saved in a defaults file  which loads the tableview as follows:
+        /* Iteration 1 (obsolete) - Items saved in defaults file; tableview loads as follows:
          if let items = defaults.array(forKey: "TodoListArray") as? [String] {
              itemArray = items
          }
-         Iteration 2 - (obsolete) - Under MVC, items are initialized based on Item class, defined in Item.swift.  addButtonPressed contains  "self. defaults. set(self.itemArray, forKey: "TodoListArray")", saving array to the user defaults named "defaults".
-        */
-        
-        /* Iteration 3 - Originally, we called loadItems() at this point to load items using CoreData. Note -[no param passed to loadItems() since default param of Item. fetchRequest is specified in the function definition].  We now call loadItems() to match selected category in didSet method when we declared the var selectedCategory
+         Iteration 2 - (obsolete) - Under MVC, items are initialized based on Item class, from Item.swift.  addButtonPressed contains  "self. defaults. set(self.itemArray, forKey: "TodoListArray")", saving array to the user defaults named "defaults".
+         
+         Iteration 3 - Originally, we called loadItems() at this point to load items using CoreData. Note -[no param passed to loadItems() since default param of Item. fetchRequest is specified in the function definition].  We now call loadItems() to match selected category in didSet method when we declared the var selectedCategory
          
          loadItems()
-         */
+        */
+    }
+    
+    // This function exists because we want navbar's baxkgroundColor to match that of the parent category.  The code below was originally in viewDidLoad, but that crashes the app, since the navigation controller is not yet added to the stack and calls to the navigation controller would fail.  viewWillAppear happens at a later point so placing the code there eliminates the possibility of a crash.
+    
+    override func viewWillAppear(_ animated: Bool) {
+        // 1) For navigation bar color, use the parent category color. Optional chaining required below. It says: if colorHex is not nil, set the background color to match the category.  It also handles the possibility that the navigation centroller might not exist 2) change the navbar's title to show the category
         
+        if let colorHex = selectedCategory?.backgroundColor {
+            // Since at this point we know that seletedCategory is not nil, can force unwrap
+            title = selectedCategory!.name
+            guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist.")}
+            navBar.backgroundColor = UIColor(hexString: colorHex)
+            
+            // In setting the colors of nvbar button items to constrasting, we find that although UIColor returns an optional, the contrasting keyword does not.  Therefore, use if...let
+            if let navBarColor = UIColor(hexString: colorHex) {
+                
+                // Set the colors of navbar's buttons (+ and <) to be contrasting.  Settings in the line below apply to all of the bar button items in the navbar
+                navBar.barTintColor = navBarColor
+                
+                navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+                
+                searchBar.barTintColor = navBarColor
+                
+                // Set the attributes of the navBar title. This uses .largeTitleTextAttributes because we set our title to large in main.storyboard
+                navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: ContrastColorOf(navBarColor, returnFlat: true)] 
+                
+            }
+            
+            
+        }
     }
     
     //MARK: - TableView DataSource Methods
@@ -145,7 +175,7 @@ class ToDoListViewController: SwipeTableViewController {
     //MARK: - Add New Items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
-        //NOTE:  Understanding of scope for variables is necessary to follow sequence of events below.  6 steps are:
+        //Understanding of scope for vars is necessary to follow sequence below.  6 steps are:
         
         //1. Initialize textField (accessible throughout this IBAction) to hold whatever is in text field created in UIAlertController
         var textField = UITextField()

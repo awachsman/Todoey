@@ -34,6 +34,29 @@ class CategoryViewController: SwipeTableViewController {
         
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist.")
+            
+        }
+        navBar.backgroundColor = UIColor(hexString: "1D9BF6")
+        let navBarColor = navBar.backgroundColor
+        
+        if let navBarColor = UIColor(hexString: "1D9BF6") {
+            
+            // Set the colors of navbar's buttons (+ and <) to be contrasting.  Settings in the line below apply to all of the bar button items in the navbar
+            navBar.barTintColor = navBarColor
+            
+            navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+            
+            //searchBar.barTintColor = navBarColor
+            
+            // Set the attributes of the navBar title. This uses .largeTitleTextAttributes because we set our title to large in main.storyboard
+            navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: ContrastColorOf(navBarColor, returnFlat: true)]
+            
+        }
+        // In setting the colors of nvbar button items to constrasting, we find that although UIColor returns an optional, the contrasting keyword does not.  Therefore, use if...let
+        
+    }
     //MARK: - TableView Datasource Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -51,7 +74,13 @@ class CategoryViewController: SwipeTableViewController {
         if let category = categories?[indexPath.row] {
             cell.textLabel?.text = category.name ?? "No categories added yet."
             
-        cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].backgroundColor ?? "1D9BF6")
+        //cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].backgroundColor ?? "1D9BF6")
+            
+            guard let categoryColor = UIColor(hexString: category.backgroundColor) else {fatalError()}
+            
+            cell.backgroundColor = categoryColor
+            // Apply a contrasting color for text based on computed backroundColor
+            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
         }
         
         return cell
